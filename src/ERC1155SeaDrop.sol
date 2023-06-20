@@ -24,6 +24,14 @@ contract ERC1155SeaDrop is
     ERC1155SeaDropContractOfferer,
     DefaultOperatorFilterer
 {
+    /// @dev The allowed forge contract address that can interact with tokens.
+    address internal _forgeContract;
+
+    /// @notice Set the forge contract address, only settable by the owner.
+    function setForgeContract(address forgeContract) external onlyOwner {
+        _forgeContract = forgeContract;
+    }
+
     /**
      * @notice Deploy the token contract.
      *
@@ -112,7 +120,7 @@ contract ERC1155SeaDrop is
         address owner,
         address operator
     ) public view virtual override returns (bool) {
-        if (operator == _CONDUIT) {
+        if (operator == _CONDUIT || operator == _forgeContract) {
             return true;
         }
         return ERC1155.isApprovedForAll(owner, operator);
@@ -125,7 +133,7 @@ contract ERC1155SeaDrop is
      */
     function burn(address from, uint256 id, uint256 amount) external {
         // Require that only the owner or approved operator can call.
-        if (msg.sender != from && !_isApprovedForAll[from][msg.sender]) {
+        if (msg.sender != from && !isApprovedForAll(from, msg.sender)) {
             revert NotAuthorized();
         }
 
@@ -152,7 +160,7 @@ contract ERC1155SeaDrop is
         uint256[] calldata amounts
     ) external {
         // Require that only the owner or approved operator can call.
-        if (msg.sender != from && !_isApprovedForAll[from][msg.sender]) {
+        if (msg.sender != from && !isApprovedForAll(from, msg.sender)) {
             revert NotAuthorized();
         }
 
